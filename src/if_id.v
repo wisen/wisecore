@@ -31,7 +31,7 @@ module if_id(
     output reg[31:0] o_inst
     );
 
-always @(*)
+always @(posedge clk)
 begin
     if (rst == 1'b1)
         begin
