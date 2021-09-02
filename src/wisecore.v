@@ -19,7 +19,6 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-
 module wisecore(
     input wire rst,
     input wire clk,
@@ -111,6 +110,16 @@ id id_inst0(
     .i_inst(l_ifid_inst_id),
     .i_reg1_data(l_rf_reg1data_id),
     .i_reg2_data(l_rf_reg2data_id),
+  
+    /*add port for dataforward from ex*/
+    .i_ex_wreg(l_ex_wreg_exmem),
+    .i_ex_wreg_addr(l_ex_wreg_addr_exmem),
+    .i_ex_wreg_data(l_ex_wreg_data_exmem),
+
+    /*add port for dataforward from mem*/
+    .i_mem_wreg(l_mem_wreg_wb),
+    .i_mem_wreg_addr(l_mem_wreg_addr_wb),
+    .i_mem_wreg_data(l_mem_wreg_data_wb),      
     
     .o_alusel(l_id_alusel_idex),
     .o_aluop(l_id_aluop_idex),

@@ -28,7 +28,10 @@ module inst_rom(
     );
     
 reg[31:0] inst_rom[0:31];
-initial $readmemh("inst_rom.data", inst_rom);
+//initial $readmemh("inst_rom.data", inst_rom);
+//initial $readmemh("inst_rom.data_v0.2_01", inst_rom);
+//initial $readmemh("inst_rom.data_v0.2_02", inst_rom);
+initial $readmemh("inst_rom.data_v0.2_03", inst_rom);
 
 always @(*)
 begin
