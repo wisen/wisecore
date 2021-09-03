@@ -7,6 +7,13 @@
 	xor    |--000000--|----rs----|----rt----|----rd----|--00000--|-100110-|  ==> xor rd, rs, rt # rd <- rs XOR rt
 	nor    |--000000--|----rs----|----rt----|----rd----|--00000--|-100111-|  ==> nor rd, rs, rt # rd <- rs NOR rt
 	
+	movn   |--000000--|----rs----|----rt----|----rd----|--00000--|-001011-|  ==> movn rd, rs, rt # if rt != 0 then rd <- rs
+	movz   |--000000--|----rs----|----rt----|----rd----|--00000--|-001010-|  ==> movz rd, rs, rt # if rt == 0 then rd <- rs
+	mfhi   |--000000--|---00000--|---00000--|----rd----|--00000--|-010000-|  ==> mfhi rd # rd <- hi
+	mflo   |--000000--|---00000--|---00000--|----rd----|--00000--|-010010-|  ==> mflo rd # rd <- lo
+	mthi   |--000000--|----rs----|---00000--|---00000--|--00000--|-010001-|  ==> mthi rs # hi <- rs
+	mtlo   |--000000--|----rs----|---00000--|---00000--|--00000--|-010011-|  ==> mtlo rs # lo <- rs
+	
 	sll    |--000000--|---00000--|----rt----|----rd----|---sa---|-000000-|  ==> sll rd, rt, sa # rd <- rt << sa(logic)
 	srl    |--000000--|---00000--|----rt----|----rd----|---sa---|-000010-|  ==> srl rd, rt, sa # rd <- rt >> sa(logic)
 	sra    |--000000--|---00000--|----rt----|----rd----|---sa---|-000011-|  ==> sra rd, rt, sa # rd <- rt >> sa(arithmetic)
@@ -55,6 +62,13 @@
 `define INST_SYNC   6'b001111
 `define INST_PREF   6'b110011
 
+`define INST_MOVN   6'b001011
+`define INST_MOVZ   6'b001010
+`define INST_MFHI   6'b010000
+`define INST_MFLO   6'b010010
+`define INST_MTHI   6'b010001
+`define INST_MTLO   6'b010011
+
 `define INST_NOP    6'b000000
 `define INST_SSNOP  32'b00000000000000000000000001000000
 
@@ -79,9 +93,17 @@
 `define OP_SRA  8'b00001101
 `define OP_SRAV 8'b00001110
 
+`define OP_MOVN 8'b00010001
+`define OP_MOVZ 8'b00010010
+`define OP_MFHI 8'b00010011
+`define OP_MFLO 8'b00010100
+`define OP_MTHI 8'b00010101
+`define OP_MTLO 8'b00010110
+
 `define OP_NOP  8'b00000000
 
 //AluSel, Operation type: nop,logic,shift,arithmrtic
 `define OP_TYPE_NOP     3'b000
 `define OP_TYPE_LOGIC   3'b001
 `define OP_TYPE_SHIFT   3'b010
+`define OP_TYPE_MOVE    3'b011

@@ -330,9 +330,117 @@ begin
                                     o_rreg1_en <= 1'b0;
                                     o_rreg2_en <= 1'b0;
                                     
-                                    o_wreg_addr <= 5'b00000; //写的目的寄存器地址
-                                    instvalid = 1'b1; //ori指令是有效指令
+                                    o_wreg_addr <= 5'b00000;
+                                    instvalid = 1'b1;
                                 end                            
+                            /*
+                                movn   |--000000--|----rs----|----rt----|----rd----|--00000--|-001011-|  ==> movn rd, rs, rt # if rt != 0 then rd <- rs
+                            */
+                            `INST_MOVN:
+                                begin
+                                    instvalid = 1'b1;
+                                    
+                                    o_wreg <= 1'b1;
+                                    o_wreg_addr <= rd;
+                                    
+                                    o_alusel <= `OP_TYPE_MOVE;
+                                    o_aluop <= `OP_MOVN;
+                                    
+                                    o_rreg1_en <= 1'b1;
+                                    o_rreg2_en <= 1'b1;
+                                    o_rreg1_addr <= rt;
+                                    o_rreg2_addr <= rs;                         
+                                end
+                            /*
+                                movz   |--000000--|----rs----|----rt----|----rd----|--00000--|-001010-|  ==> movz rd, rs, rt # if rt == 0 then rd <- rs
+                            */
+                            `INST_MOVZ:
+                                begin
+                                    instvalid = 1'b1;
+                                
+                                    o_wreg <= 1'b1;
+                                    o_wreg_addr <= rd;
+                                    
+                                    o_alusel <= `OP_TYPE_MOVE;
+                                    o_aluop <= `OP_MOVZ;
+                                    
+                                    o_rreg1_en <= 1'b1;
+                                    o_rreg2_en <= 1'b1;
+                                    o_rreg1_addr <= rt;
+                                    o_rreg2_addr <= rs;
+                                end
+                            /*
+                                mfhi   |--000000--|---00000--|---00000--|----rd----|--00000--|-010000-|  ==> mfhi rd # rd <- hi
+                            */
+                            `INST_MFHI:
+                                begin
+                                    instvalid = 1'b1;
+                                
+                                    o_wreg <= 1'b1;
+                                    o_wreg_addr <= rd;
+                                    
+                                    o_alusel <= `OP_TYPE_MOVE;
+                                    o_aluop <= `OP_MFHI;
+                                    
+                                    o_rreg1_en <= 1'b0;
+                                    o_rreg2_en <= 1'b0;
+                                    o_rreg1_addr <= 5'b00000;
+                                    o_rreg2_addr <= 5'b00000;
+                                end
+                            /*
+                                mflo   |--000000--|---00000--|---00000--|----rd----|--00000--|-010010-|  ==> mflo rd # rd <- lo
+                            */
+                            `INST_MFLO:
+                                begin
+                                    instvalid = 1'b1;
+                            
+                                    o_wreg <= 1'b1;
+                                    o_wreg_addr <= rd;
+                                    
+                                    o_alusel <= `OP_TYPE_MOVE;
+                                    o_aluop <= `OP_MFLO;
+                                    
+                                    o_rreg1_en <= 1'b0;
+                                    o_rreg2_en <= 1'b0;
+                                    o_rreg1_addr <= 5'b00000;
+                                    o_rreg2_addr <= 5'b00000;
+                                end
+                            /*
+                                mthi   |--000000--|----rs----|---00000--|---00000--|--00000--|-010001-|  ==> mthi rs # hi <- rs
+                            */
+                            `INST_MTHI:
+                                begin
+                                    instvalid = 1'b1;
+                            
+                                    o_wreg <= 1'b0;
+                                    o_wreg_addr <= 5'b00000;
+                                    
+                                    o_alusel <= `OP_TYPE_MOVE;
+                                    o_aluop <= `OP_MTHI;
+                                    
+                                    o_rreg1_en <= 1'b1;
+                                    o_rreg2_en <= 1'b0;
+                                    o_rreg1_addr <= rs;
+                                    o_rreg2_addr <= 5'b00000;
+                                end
+                            /*
+                                mtlo   |--000000--|----rs----|---00000--|---00000--|--00000--|-010011-|  ==> mtlo rs # lo <- rs
+                            */
+                            `INST_MTLO:
+                                begin
+                                    instvalid = 1'b1;
+                        
+                                    o_wreg <= 1'b0;
+                                    o_wreg_addr <= 5'b00000;
+                                    
+                                    o_alusel <= `OP_TYPE_MOVE;
+                                    o_aluop <= `OP_MTLO;
+                                    
+                                    o_rreg1_en <= 1'b1;
+                                    o_rreg2_en <= 1'b0;
+                                    o_rreg1_addr <= rs;
+                                    o_rreg2_addr <= 5'b00000;
+                                end
                             default:
                                 begin
                                     o_wreg <= 1'b0;
@@ -449,10 +557,12 @@ begin
         begin
             o_reg1_data <= 32'h0;
         end
+    //解决ID和EX的数据依赖
     else if((o_rreg1_en == 1'b1) && (i_ex_wreg == 1'b1) && (o_rreg1_addr == i_ex_wreg_addr))
         begin
             o_reg1_data <= i_ex_wreg_data;
         end
+    //解决ID和MEM的数据依赖
     else if((o_rreg1_en == 1'b1) && (i_mem_wreg == 1'b1) && (o_rreg1_addr == i_mem_wreg_addr))
         begin
             o_reg1_data <= i_mem_wreg_data;
@@ -478,10 +588,12 @@ begin
         begin
             o_reg2_data <= 32'h0;
         end
+    //解决ID和EX的数据依赖
     else if((o_rreg2_en == 1'b1) && (i_ex_wreg == 1'b1) && (o_rreg2_addr == i_ex_wreg_addr))
         begin
             o_reg2_data <= i_ex_wreg_data;
         end
+    //解决ID和MEM的数据依赖
     else if((o_rreg2_en == 1'b1) && (i_mem_wreg == 1'b1) && (o_rreg2_addr == i_mem_wreg_addr))
         begin
             o_reg2_data <= i_mem_wreg_data;

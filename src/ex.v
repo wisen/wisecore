@@ -30,13 +30,31 @@ module ex(
     input wire i_wreg,
     input wire[4:0] i_wreg_addr,
     
+    
+    input wire[31:0] i_hi,
+    input wire[31:0] i_lo,
+    
+    input wire i_wb_whilo,
+    input wire[31:0] i_wb_hi,
+    input wire[31:0] i_wb_lo,
+    input wire i_mem_whilo,
+    input wire[31:0] i_mem_hi,
+    input wire[31:0] i_mem_lo,
+    
     output reg o_wreg,
     output reg[4:0] o_wreg_addr,
-    output reg[31:0] o_wreg_data
+    output reg[31:0] o_wreg_data,
+    
+    output reg o_whilo,
+    output reg[31:0] o_hi,
+    output reg[31:0] o_lo
     );
 
 reg[31:0] logic_res;
 reg[31:0] shift_res;
+reg[31:0] move_res;
+reg[31:0] HI;
+reg[31:0] LO;
 
 //process logic operations
 always @(*)
@@ -171,6 +189,105 @@ begin
         end
 end
 
+//process move operations
+always @(*)
+begin
+    if (rst == 1'b1)
+        begin
+            move_res <= 32'h0;
+            o_whilo <= 1'b0;
+            o_hi <= 32'h0;
+            o_lo <= 32'h0;
+        end
+    else
+        begin
+            case (i_aluop)
+            /*
+            	movn   |--000000--|----rs----|----rt----|----rd----|--00000--|-001011-|  ==> movn rd, rs, rt # if rt != 0 then rd <- rs
+            */
+            `OP_MOVN:
+                begin
+                    if (i_reg1_data != 0)
+                        begin
+                            move_res <= i_reg2_data;
+                        end
+                end
+            /*
+                movz   |--000000--|----rs----|----rt----|----rd----|--00000--|-001010-|  ==> movz rd, rs, rt # if rt == 0 then rd <- rs
+            */
+            `OP_MOVZ:
+                begin
+                    if (i_reg1_data == 0)
+                        begin
+                            move_res <= i_reg2_data;
+                        end
+                end
+            /*
+                mfhi   |--000000--|---00000--|---00000--|----rd----|--00000--|-010000-|  ==> mfhi rd # rd <- hi
+            */
+            `OP_MFHI:
+                begin
+                    move_res <= HI;
+                end
+            /*
+                mflo   |--000000--|---00000--|---00000--|----rd----|--00000--|-010010-|  ==> mflo rd # rd <- lo
+            */
+            `OP_MFLO:
+                begin
+                    move_res <= LO;
+                end
+            /*
+                mthi   |--000000--|----rs----|---00000--|---00000--|--00000--|-010001-|  ==> mthi rs # hi <- rs
+            */
+            `OP_MTHI:
+                begin
+                    o_whilo <= 1'b1;
+                    o_hi <= i_reg1_data;
+                end
+            /*
+                mtlo   |--000000--|----rs----|---00000--|---00000--|--00000--|-010011-|  ==> mtlo rs # lo <- rs
+            */
+            `OP_MTLO:
+                begin
+                    o_whilo <= 1'b1;
+                    o_lo <= i_reg1_data;
+                end
+            default:
+                begin
+                end
+            endcase
+        end
+end
+
+always @(*)
+begin
+    if (rst == 1'b1)
+        begin
+            HI <= 32'h0;
+            LO <= 32'h0;
+        end
+    else
+        begin
+            //解决EX和MEM的数据依赖
+            if (i_mem_whilo == 1'b1)
+                begin
+                    HI <= i_mem_hi;
+                    LO <= i_mem_lo;
+                end
+            //解决EX和WB的数据依赖
+            else if (i_wb_whilo == 1'b1)
+                begin
+                    HI <= i_wb_hi;
+                    LO <= i_wb_lo;
+                end
+            else
+                begin
+                    HI <= i_hi;
+                    LO <= i_lo;
+                end
+        end
+end
+
 always @(*)
 begin
     o_wreg <= i_wreg;
@@ -183,6 +300,10 @@ begin
         `OP_TYPE_SHIFT:
             begin
                 o_wreg_data <= shift_res;
+            end
+        `OP_TYPE_MOVE:
+            begin
+                o_wreg_data <= move_res;
             end
         default:
             begin

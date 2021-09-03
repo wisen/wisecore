@@ -62,20 +62,37 @@ wire l_ex_wreg_exmem;
 wire[4:0] l_ex_wreg_addr_exmem;
 wire[31:0] l_ex_wreg_data_exmem;
 
+wire l_ex_whilo_exmem;
+wire[31:0] l_ex_hi_exmem;
+wire[31:0] l_ex_lo_exmem;
+
 //EX_MEM模块与MEM模块连接总线
 wire l_exmem_wreg_mem;
 wire[4:0] l_exmem_wreg_addr_mem;
 wire[31:0] l_exmem_wreg_data_mem;
+
+wire l_exmem_whilo_mem;
+wire[31:0] l_exmem_hi_mem;
+wire[31:0] l_exmem_lo_mem;
 
 //MEM模块与MEM_WB模块连接总线
 wire l_mem_wreg_wb;
 wire[4:0] l_mem_wreg_addr_wb;
 wire[31:0] l_mem_wreg_data_wb;
 
+wire l_mem_whilo_wb;
+wire[31:0] l_mem_hi_wb;
+wire[31:0] l_mem_lo_wb;
+
 //MEM_WB模块与RegFile模块连接总线
 wire l_wb_wen_rf;
 wire[4:0] l_wb_waddr_rf;
 wire[31:0] l_wb_wdata_rf;
+
+//MEM_WB模块与Hilo模块连接总线
+wire l_wb_whilo;
+wire[31:0] l_wb_hi;
+wire[31:0] l_wb_lo;
 
 //RegFile模块与ID模块连接总线
 wire l_id_en1_rf;
@@ -84,6 +101,10 @@ wire l_id_en2_rf;
 wire[4:0] l_id_raddr2_rf;
 wire[31:0] l_rf_reg1data_id;
 wire[31:0] l_rf_reg2data_id;
+
+//Hilo模块与EX模块连接总线
+wire [31:0] l_ex_hi_hilo;
+wire [31:0] l_ex_lo_hilo;
 
 //IF模块实例化
 ifetch ifetch_inst0(
@@ -203,10 +224,24 @@ ex ex_inst0(
     .i_reg2_data(l_idex_reg2data_ex),
     .i_wreg(l_idex_wreg_ex),
     .i_wreg_addr(l_idex_wreg_addr_ex),
+
+    .i_hi(l_ex_hi_hilo),
+    .i_lo(l_ex_lo_hilo),
+    
+    .i_wb_whilo(l_wb_whilo),
+    .i_wb_hi(l_wb_hi),
+    .i_wb_lo(l_wb_lo),
+    .i_mem_whilo(l_mem_whilo_wb),
+    .i_mem_hi(l_mem_hi_wb),
+    .i_mem_lo(l_mem_lo_wb),
     
     .o_wreg(l_ex_wreg_exmem),
     .o_wreg_addr(l_ex_wreg_addr_exmem),
-    .o_wreg_data(l_ex_wreg_data_exmem)
+    .o_wreg_data(l_ex_wreg_data_exmem),
+    
+    .o_whilo(l_ex_whilo_exmem),
+    .o_hi(l_ex_hi_exmem),
+    .o_lo(l_ex_lo_exmem)
 );
 
 //EX_MEM模块实例化
@@ -217,9 +252,17 @@ ex_mem ex_mem_inst0(
     .i_wreg_addr(l_ex_wreg_addr_exmem),
     .i_wreg_data(l_ex_wreg_data_exmem),
     
+    .i_whilo(l_ex_whilo_exmem),
+    .i_hi(l_ex_hi_exmem),
+    .i_lo(l_ex_lo_exmem),
+    
     .o_wreg(l_exmem_wreg_mem),
     .o_wreg_addr(l_exmem_wreg_addr_mem),
-    .o_wreg_data(l_exmem_wreg_data_mem)
+    .o_wreg_data(l_exmem_wreg_data_mem),
+    
+    .o_whilo(l_exmem_whilo_mem),
+    .o_hi(l_exmem_hi_mem),
+    .o_lo(l_exmem_lo_mem)
 );
 
 //MEM模块实例化
@@ -228,10 +271,18 @@ mem mem_inst0(
     .i_wreg(l_exmem_wreg_mem),
     .i_wreg_addr(l_exmem_wreg_addr_mem),
     .i_wreg_data(l_exmem_wreg_data_mem),
+    
+    .i_whilo(l_exmem_whilo_mem),
+    .i_hi(l_exmem_hi_mem),
+    .i_lo(l_exmem_lo_mem),
 
     .o_wreg(l_mem_wreg_wb),
     .o_wreg_addr(l_mem_wreg_addr_wb),
-    .o_wreg_data(l_mem_wreg_data_wb)
+    .o_wreg_data(l_mem_wreg_data_wb),
+    
+    .o_whilo(l_mem_whilo_wb),
+    .o_hi(l_mem_hi_wb),
+    .o_lo(l_mem_lo_wb)
 );
 
 //MEM_WB实例化
@@ -242,9 +293,28 @@ mem_wb mem_wb_inst0(
 .i_wreg_addr(l_mem_wreg_addr_wb),
 .i_wreg_data(l_mem_wreg_data_wb),
 
+.i_whilo(l_mem_whilo_wb),
+.i_hi(l_mem_hi_wb),
+.i_lo(l_mem_lo_wb),
+
 .o_wreg(l_wb_wen_rf),
 .o_wreg_addr(l_wb_waddr_rf),
-.o_wreg_data(l_wb_wdata_rf)
+.o_wreg_data(l_wb_wdata_rf),
+
+.o_whilo(l_wb_whilo),
+.o_hi(l_wb_hi),
+.o_lo(l_wb_lo)
 );
 
+//HILO实例化
+hilo hilo_inst0(
+.rst(rst),
+.clk(clk),
+.i_ce(l_wb_whilo),
+.i_hi(l_wb_hi),
+.i_lo(l_wb_lo),
+   
+.o_hi(l_ex_hi_hilo),
+.o_lo(l_ex_lo_hilo)
+);
 endmodule
